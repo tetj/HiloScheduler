@@ -24,7 +24,6 @@ All timings and temperatures are configurable via `appsettings.json`.
 ## Requirements
 
 - Windows x64
-- .NET 8 SDK (build only — the published exe is self-contained)
 - An **ecobee** thermostat with HomeKit enabled
 - A **Hilo** account (Hydro-Quebec)
 - Both devices on the same local network
@@ -43,7 +42,7 @@ Your ecobee will display a PIN. Then run:
 
 ```powershell
 cd HiloScheduler
-dotnet run -- --pair --pin 12345678
+HiloScheduler.exe --pair --pin 12345678
 ```
 
 The PIN can be passed with or without dashes (`12345678` or `123-45-678`).
@@ -57,7 +56,7 @@ Credentials are saved to `ecobee_pairing.json`.
 ### Step 2 - Authenticate with Hilo (one time only)
 
 ```powershell
-dotnet run -- --login
+HiloScheduler.exe --login
 ```
 
 Your browser will open to the Hilo login page. After logging in, you will land on a `my.home-assistant.io` page. **Copy the full URL from your browser address bar** and paste it back into the terminal.
@@ -66,18 +65,13 @@ Tokens are saved to `hilo_tokens.json` and refreshed automatically on every subs
 
 ---
 
-### Step 3 - Publish the exe
+### Step 3 - Download files from the latest release and copy them to a folder on your PC
 
-```powershell
-dotnet publish -c Release -o C:\Services\HiloScheduler
 ```
-
-This produces a **single self-contained `HiloScheduler.exe`** with no external dependencies. Copy your credential and config files next to it:
-
-```powershell
-copy ecobee_pairing.json  C:\Services\HiloScheduler\
-copy hilo_tokens.json     C:\Services\HiloScheduler\
-copy appsettings.json     C:\Services\HiloScheduler\
+copy HiloScheduler.exe    C:\HiloScheduler\
+copy ecobee_pairing.json  C:\HiloScheduler\
+copy hilo_tokens.json     C:\HiloScheduler\
+copy appsettings.json     C:\HiloScheduler\
 ```
 
 ---
@@ -87,7 +81,7 @@ copy appsettings.json     C:\Services\HiloScheduler\
 Open an **elevated PowerShell** (right-click Start -> Windows PowerShell -> Run as Administrator):
 
 ```powershell
-sc.exe create HiloScheduler binpath= "C:\Services\HiloScheduler\HiloScheduler.exe" start= auto
+sc.exe create HiloScheduler binpath= "C:\HiloScheduler\HiloScheduler.exe" start= auto
 sc.exe start HiloScheduler
 ```
 

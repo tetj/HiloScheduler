@@ -62,18 +62,33 @@ public class HiloClient(HttpClient http, IOptions<SchedulerOptions> options, ILo
     // Token management
     // -----------------------------------------------------------------------
 
+    private string? _cachedToken;
+    private DateTimeOffset _tokenExpiry = DateTimeOffset.MinValue;
+
     public async Task<string> GetAccessTokenAsync(CancellationToken ct = default)
     {
-        var tokens = LoadTokens();
-        if (tokens?.RefreshToken is not null)
+        // Return cached token if it has more than 5 minutes left
+        if (_cachedToken is not null && _tokenExpiry > DateTimeOffset.UtcNow.AddMinutes(5))
         {
-            tokens = await RefreshAsync(tokens.RefreshToken, ct);
-            SaveTokens(tokens);
-            logger.LogInformation("Hilo authentication successful (refresh token).");
-            return tokens.AccessToken;
+            return _cachedToken;
         }
-        throw new InvalidOperationException(
-            "No Hilo tokens found. Run the program with --login first.");
+
+        var tokens = LoadTokens();
+        if (tokens?.RefreshToken is null)
+        {
+            throw new InvalidOperationException(
+                "No Hilo tokens found. Run the program with --login first.");
+        }
+
+        var refreshed = await RefreshAsync(tokens.RefreshToken, ct);
+        SaveTokens(refreshed);
+
+        // Hilo tokens expire in 3600s — cache for 50 minutes to be safe
+        _cachedToken = refreshed.AccessToken;
+        _tokenExpiry = DateTimeOffset.UtcNow.AddMinutes(50);
+
+        logger.LogInformation("Hilo authentication successful (refresh token).");
+        return _cachedToken;
     }
 
     // -----------------------------------------------------------------------

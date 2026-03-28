@@ -19,7 +19,7 @@ public class Worker(
             logger.LogInformation("=== Hilo event check ===");
             try
             {
-                await RunOnceAsync(ct);
+                await RunOnceInternalAsync(ct);
             }
             catch (FileNotFoundException ex)
             {
@@ -29,6 +29,10 @@ public class Worker(
             catch (InvalidOperationException ex) when (ex.Message.Contains("--login"))
             {
                 logger.LogError("No Hilo tokens found. Run: HiloScheduler.exe --login");
+                return;
+            }
+            catch (OperationCanceledException)
+            {
                 return;
             }
             catch (Exception ex)
@@ -92,14 +96,17 @@ public class Worker(
             logger.LogInformation("[PREHEAT LOW] Already in preheat window.");
         }
 
-        var saved = await ecobee.GetTargetTempAsync(ct);
+        // Open one session for the entire event — one pair-verify handshake covers all phases
+        await using var session = await ecobee.OpenSessionAsync(ct);
+
+        var saved = await ecobee.GetTargetTempAsync(session, ct);
         logger.LogInformation("Saved setpoint: {Saved}°C (will restore after event)", saved);
-        await ecobee.SetTargetTempAsync(_opts.TempPreheatLow, ct);
+        await ecobee.SetTargetTempAsync(session, _opts.TempPreheatLow, ct);
 
         if (preheatHigh > DateTime.UtcNow)
         {
             await SleepUntilAsync(preheatHigh, "PREHEAT HIGH", ct);
-            await ecobee.SetTargetTempAsync(_opts.TempPreheatHigh, ct);
+            await ecobee.SetTargetTempAsync(session, _opts.TempPreheatHigh, ct);
         }
         else
         {
@@ -110,10 +117,10 @@ public class Worker(
         {
             await SleepUntilAsync(start, "REDUCTION", ct);
         }
-        await ecobee.SetTargetTempAsync(_opts.TempReduction, ct);
+        await ecobee.SetTargetTempAsync(session, _opts.TempReduction, ct);
 
         await SleepUntilAsync(end, "RECOVERY", ct);
-        await ecobee.SetTargetTempAsync(saved, ct);
+        await ecobee.SetTargetTempAsync(session, saved, ct);
         logger.LogInformation("Event complete. Temperature restored to {Saved}°C.", saved);
     }
 

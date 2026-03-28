@@ -4,31 +4,30 @@ using HiloScheduler.HomeKit;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
+var builder = Host.CreateDefaultBuilder(args)
+    .UseWindowsService(options => options.ServiceName = "HiloScheduler")
+    .ConfigureServices((ctx, services) =>
+    {
+        services.Configure<SchedulerOptions>(ctx.Configuration.GetSection("Scheduler"));
+        services.AddHttpClient<HiloClient>();
+        services.AddSingleton<EcobeeClient>();
+        services.AddSingleton<Worker>();
+        services.AddHostedService(sp => sp.GetRequiredService<Worker>());
+    });
+
 // --login: interactive one-time Hilo authentication
 if (args.Contains("--login"))
 {
-    var loginHost = Host.CreateDefaultBuilder(args)
-        .ConfigureServices((ctx, services) =>
-        {
-            services.Configure<SchedulerOptions>(ctx.Configuration.GetSection("Scheduler"));
-            services.AddHttpClient<HiloClient>();
-        })
-        .Build();
-    await loginHost.Services.GetRequiredService<HiloClient>().InteractiveLoginAsync();
+    var host = builder.Build();
+    await host.Services.GetRequiredService<HiloClient>().InteractiveLoginAsync();
     return;
 }
 
 // --pair: interactive one-time ecobee HomeKit pairing
 if (args.Contains("--pair"))
 {
-    var pairHost = Host.CreateDefaultBuilder(args)
-        .ConfigureServices((ctx, services) =>
-        {
-            services.Configure<SchedulerOptions>(ctx.Configuration.GetSection("Scheduler"));
-        })
-        .Build();
-
-    var opts = pairHost.Services.GetRequiredService<IOptions<SchedulerOptions>>().Value;
+    var host = builder.Build();
+    var opts = host.Services.GetRequiredService<IOptions<SchedulerOptions>>().Value;
 
     var pinArg = GetArg(args, "--pin");
     var ipArg  = GetArg(args, "--ip");
@@ -55,46 +54,25 @@ if (args.Contains("--pair"))
     Console.WriteLine($"Using PIN: {pin}");
 
     var pairing = await PairSetup.PerformAsync(device.Host, device.Port, pin);
-    var file = new PairingFile("ecobee", pairing);
-    var path = opts.ResolvePath(opts.PairingFile);
+    var file    = new PairingFile("ecobee", pairing);
+    var path    = opts.ResolvePath(opts.PairingFile);
     File.WriteAllText(path, JsonSerializer.Serialize(file, new JsonSerializerOptions { WriteIndented = true }));
     Console.WriteLine($"\nOK Paired successfully! Credentials saved to '{path}'.");
     Console.WriteLine("You can now install and start the service.");
     return;
 }
 
-// --once: single check and exit (useful for testing)
+// --once: single check and exit
 if (args.Contains("--once"))
 {
-    var onceHost = Host.CreateDefaultBuilder(args)
-        .ConfigureServices((ctx, services) =>
-        {
-            services.Configure<SchedulerOptions>(ctx.Configuration.GetSection("Scheduler"));
-            services.AddHttpClient<HiloClient>();
-            services.AddSingleton<EcobeeClient>();
-        })
-        .Build();
-    var worker = new Worker(
-        onceHost.Services.GetRequiredService<ILogger<Worker>>(),
-        onceHost.Services.GetRequiredService<IOptions<SchedulerOptions>>(),
-        onceHost.Services.GetRequiredService<HiloClient>(),
-        onceHost.Services.GetRequiredService<EcobeeClient>());
+    var host   = builder.Build();
+    var worker = host.Services.GetRequiredService<Worker>();
     await worker.RunOnceInternalAsync(CancellationToken.None);
     return;
 }
 
-var host = Host.CreateDefaultBuilder(args)
-    .UseWindowsService(options => options.ServiceName = "HiloScheduler")
-    .ConfigureServices((ctx, services) =>
-    {
-        services.Configure<SchedulerOptions>(ctx.Configuration.GetSection("Scheduler"));
-        services.AddHttpClient<HiloClient>();
-        services.AddSingleton<EcobeeClient>();
-        services.AddHostedService<Worker>();
-    })
-    .Build();
-
-await host.RunAsync();
+// Normal mode: run as background service
+await builder.Build().RunAsync();
 
 static string? GetArg(string[] args, string flag)
 {

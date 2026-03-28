@@ -11,20 +11,27 @@ public class EcobeeClient(IOptions<SchedulerOptions> options, ILogger<EcobeeClie
 
     private readonly SchedulerOptions _opts = options.Value;
 
-    public async Task<double> GetTargetTempAsync(CancellationToken ct = default)
+    /// <summary>Opens a single authenticated session for use across multiple calls.</summary>
+    public async Task<HapSession> OpenSessionAsync(CancellationToken ct = default)
     {
-        var (aid, iid) = await FindCharacteristicAsync(ct);
-        await using var session = await OpenSessionAsync(ct);
-        var body = await session.GetAsync($"/characteristics?id={aid}.{iid}", ct);
+        var pairing = LoadPairing();
+        var session = await HapSession.ConnectAsync(pairing.AccessoryIp, pairing.AccessoryPort, ct);
+        await PairVerify.PerformAsync(session, pairing, ct);
+        return session;
+    }
+
+    public async Task<double> GetTargetTempAsync(HapSession session, CancellationToken ct = default)
+    {
+        var (aid, iid) = await FindCharacteristicAsync(session, ct);
+        var body  = await session.GetAsync($"/characteristics?id={aid}.{iid}", ct);
         var value = ParseCharacteristicValue(body);
         logger.LogInformation("Current ecobee target temperature: {Temp}°C", value);
         return value;
     }
 
-    public async Task SetTargetTempAsync(double temp, CancellationToken ct = default)
+    public async Task SetTargetTempAsync(HapSession session, double temp, CancellationToken ct = default)
     {
-        var (aid, iid) = await FindCharacteristicAsync(ct);
-        await using var session = await OpenSessionAsync(ct);
+        var (aid, iid) = await FindCharacteristicAsync(session, ct);
         var payload = JsonSerializer.Serialize(new
         {
             characteristics = new[] { new { aid, iid, value = temp } }
@@ -39,26 +46,17 @@ public class EcobeeClient(IOptions<SchedulerOptions> options, ILogger<EcobeeClie
 
     private (int Aid, int Iid)? _cachedChar;
 
-    private async Task<(int Aid, int Iid)> FindCharacteristicAsync(CancellationToken ct)
+    private async Task<(int Aid, int Iid)> FindCharacteristicAsync(HapSession session, CancellationToken ct)
     {
         if (_cachedChar.HasValue)
         {
             return _cachedChar.Value;
         }
 
-        await using var session = await OpenSessionAsync(ct);
-        var body        = await session.GetAsync("/accessories", ct);
-        var result      = FindCharacteristic(body, TargetTempUuid);
-        _cachedChar     = result;
+        var body    = await session.GetAsync("/accessories", ct);
+        var result  = FindCharacteristic(body, TargetTempUuid);
+        _cachedChar = result;
         return result;
-    }
-
-    private async Task<HapSession> OpenSessionAsync(CancellationToken ct)
-    {
-        var pairing = LoadPairing();
-        var session = await HapSession.ConnectAsync(pairing.AccessoryIp, pairing.AccessoryPort, ct);
-        await PairVerify.PerformAsync(session, pairing, ct);
-        return session;
     }
 
     private PairingRecord LoadPairing()
