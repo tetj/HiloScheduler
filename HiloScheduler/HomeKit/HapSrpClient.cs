@@ -36,9 +36,9 @@ public class HapSrpClient
 
     static HapSrpClient()
     {
-        // k = H(N | PAD(g))  where PAD makes g the same byte-length as N
+        // k = H(N | g)  — g is NOT padded, just its minimal byte representation
         var nBytes = ToBytes(N);
-        var gBytes = PadTo(ToBytes(g), nBytes.Length);
+        var gBytes = ToBytes(g);
         k = HashToBigInt(nBytes, gBytes);
     }
 
@@ -80,13 +80,13 @@ public class HapSrpClient
     public byte[] GetProofBytes()
     {
         // M1 = H( H(N) XOR H(g) | H(username) | salt | A | B | K )
+        // Note: g is hashed as its minimal byte representation (1 byte), NOT padded to N length
         var nBytes    = ToBytes(N);
-        var gBytes    = PadTo(ToBytes(g), nBytes.Length);
         var hn        = SHA512.HashData(nBytes);
-        var hg        = SHA512.HashData(gBytes);
+        var hg        = SHA512.HashData(ToBytes(g));
         var hxor      = hn.Zip(hg, (a, b) => (byte)(a ^ b)).ToArray();
         var hu        = SHA512.HashData(Encoding.UTF8.GetBytes(_username));
-        var saltBytes = PadTo(ToBytes(_salt), nBytes.Length);
+        var saltBytes = PadTo(ToBytes(_salt), 16);
         var aBytes    = GetPublicKeyBytes();
         var bBytes    = PadTo(ToBytes(_B), nBytes.Length);
         var kBytes    = SHA512.HashData(PadTo(ToBytes(_S), nBytes.Length));
@@ -120,8 +120,8 @@ public class HapSrpClient
         // u = H(A | B)
         var u = HashToBigInt(aBytes, bBytes);
 
-        // x = H(salt | H(username | ":" | pin))
-        var saltBytes  = PadTo(ToBytes(_salt), nBytes.Length);
+        // x = H(salt_16 | H(username | ":" | pin))  — salt padded to 16 bytes
+        var saltBytes  = PadTo(ToBytes(_salt), 16);
         var innerHash  = SHA512.HashData(Encoding.UTF8.GetBytes($"{_username}:{_pin}"));
         var x          = HashToBigInt(saltBytes, innerHash);
 
