@@ -14,9 +14,13 @@ build/
 .venv/
 venv/
 
+# .NET
+bin/
+obj/
+
+# Visual Studio
+.vs/
+
 # Logs
 *.log
-
-.vs/
-HiloScheduler/obj/
 HiloScheduler/bin/
