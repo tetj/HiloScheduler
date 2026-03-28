@@ -1,8 +1,14 @@
 ﻿# Hilo Peak Event Scheduler
 
-Automatically controls your **ecobee thermostat** during Hydro-Québec [Hilo](https://www.hiloenergie.com/) peak events — no Alexa, no Virtual Smart Home, no cloud middleman.
+Automatically controls your **ecobee thermostat** during Hydro-Québec [Hilo](https://www.hiloenergie.com/) peak events
 
 The scheduler connects directly to your ecobee over your **local network** using the HomeKit Accessory Protocol, and polls the Hilo API for upcoming peak events every 4 hours.
+
+This tool is meant to be run as a Windows Service on a local PC.
+
+That **PC must be on** and connected to the same network as the ecobee during peak events.
+
+No third-party tools or cloud services required.
 
 ---
 
