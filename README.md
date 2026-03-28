@@ -71,12 +71,11 @@ Tokens are saved to `hilo_tokens.json` and refreshed automatically on every subs
 
 ---
 
-### Step 3 - Download files from the latest release and copy them to a folder on your PC
+### Step 3 - Download files from the latest release and copy the files to a folder on your PC
 
+https://github.com/tetj/HiloScheduler/releases/
 ```
 copy HiloScheduler.exe    C:\HiloScheduler\
-copy ecobee_pairing.json  C:\HiloScheduler\
-copy hilo_tokens.json     C:\HiloScheduler\
 copy appsettings.json     C:\HiloScheduler\
 ```
 
