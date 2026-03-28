@@ -1,0 +1,20 @@
+# Hilo credentials (contain HomeKit pairing keys and OAuth tokens — never commit these)
+ecobee_pairing.json
+hilo_tokens.json
+
+# Environment variables (may contain overrides for API keys)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Logs
+*.log
+
+.vs/
