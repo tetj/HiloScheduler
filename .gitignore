@@ -18,4 +18,4 @@ venv/
 *.log
 
 .vs/
-obj/
+HiloScheduler/obj/
