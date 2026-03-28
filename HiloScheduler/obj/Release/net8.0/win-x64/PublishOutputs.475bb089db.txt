@@ -1,0 +1,4 @@
+C:\Services\HiloScheduler\appsettings.Development.json
+C:\Services\HiloScheduler\appsettings.json
+C:\Services\HiloScheduler\HiloScheduler.pdb
+C:\Services\HiloScheduler\HiloScheduler.exe
