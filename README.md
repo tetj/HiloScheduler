@@ -148,7 +148,8 @@ Paths can be absolute or relative to the exe location.
 
 | Command | Description |
 |---------|-------------|
-| `HiloScheduler.exe` | Run as foreground process or Windows Service |
+| `HiloScheduler.exe` | Run as foreground process or Windows Service (loops every 4h) |
+| `HiloScheduler.exe --once` | Single check and exit |
 | `HiloScheduler.exe --login` | Interactive one-time Hilo authentication |
 | `HiloScheduler.exe --pair --pin 12345678` | Pair with ecobee |
 | `HiloScheduler.exe --pair --pin 12345678 --ip 192.168.x.x` | Pair targeting a specific IP |

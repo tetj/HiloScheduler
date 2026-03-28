@@ -63,6 +63,26 @@ if (args.Contains("--pair"))
     return;
 }
 
+// --once: single check and exit (useful for testing)
+if (args.Contains("--once"))
+{
+    var onceHost = Host.CreateDefaultBuilder(args)
+        .ConfigureServices((ctx, services) =>
+        {
+            services.Configure<SchedulerOptions>(ctx.Configuration.GetSection("Scheduler"));
+            services.AddHttpClient<HiloClient>();
+            services.AddSingleton<EcobeeClient>();
+        })
+        .Build();
+    var worker = new Worker(
+        onceHost.Services.GetRequiredService<ILogger<Worker>>(),
+        onceHost.Services.GetRequiredService<IOptions<SchedulerOptions>>(),
+        onceHost.Services.GetRequiredService<HiloClient>(),
+        onceHost.Services.GetRequiredService<EcobeeClient>());
+    await worker.RunOnceInternalAsync(CancellationToken.None);
+    return;
+}
+
 var host = Host.CreateDefaultBuilder(args)
     .UseWindowsService(options => options.ServiceName = "HiloScheduler")
     .ConfigureServices((ctx, services) =>

@@ -238,3 +238,5 @@ C:\Users\JP\_CODE\_pinned\Hilo\HiloScheduler\bin\Debug\net8.0\win-x64\System.Net
 C:\Users\JP\_CODE\_pinned\Hilo\HiloScheduler\bin\Debug\net8.0\win-x64\Makaretu.Dns.dll
 C:\Users\JP\_CODE\_pinned\Hilo\HiloScheduler\bin\Debug\net8.0\win-x64\Makaretu.Dns.Multicast.dll
 C:\Users\JP\_CODE\_pinned\Hilo\HiloScheduler\bin\Debug\net8.0\win-x64\SimpleBase.dll
+C:\Users\JP\_CODE\_pinned\Hilo\HiloScheduler\bin\Debug\net8.0\win-x64\ecobee_pairing.json
+C:\Users\JP\_CODE\_pinned\Hilo\HiloScheduler\bin\Debug\net8.0\win-x64\hilo_tokens.json

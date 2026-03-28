@@ -45,6 +45,11 @@ public class Worker(
 
     private async Task RunOnceAsync(CancellationToken ct)
     {
+        await RunOnceInternalAsync(ct);
+    }
+
+    internal async Task RunOnceInternalAsync(CancellationToken ct)
+    {
         var token      = await hilo.GetAccessTokenAsync(ct);
         var locationId = await hilo.GetLocationIdAsync(token, ct);
         var ev         = await hilo.GetNextEventAsync(token, locationId, ct);
