@@ -18,3 +18,4 @@ venv/
 *.log
 
 .vs/
+obj/
